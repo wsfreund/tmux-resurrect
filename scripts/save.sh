@@ -223,6 +223,15 @@ fetch_and_dump_grouped_sessions(){
 	fi
 }
 
+check_is_manual_title(){
+  local window_name="${1#:}"
+  window_name="${window_name/#\~/$HOME}"
+  local cmd=$2
+  local dir=${3#:}
+  { ! type ${window_name} > /dev/null 2> /dev/null; } && \
+    [[ ${cmd} != ${window_name} && ( ( ${window_name} == ..* && ${dir} != *${window_name#..} ) || ( ${window_name} != ..* && ${dir} != ${window_name} ) ) ]]
+}
+
 # translates pane pid to process command running inside a pane
 dump_panes() {
 	local full_command
@@ -232,7 +241,12 @@ dump_panes() {
 			if is_session_grouped "$session_name"; then
 				continue
 			fi
+      # Set window name to manual mode:
+      if $(check_is_manual_title "$window_name" "$pane_command" "$dir"); then
+        window_name="M$window_name"
+      fi
 			full_command="$(pane_full_command $pane_pid)"
+      full_command=${full_command/#vim -X/vim}
 			echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_name}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${full_command}"
 		done
 }

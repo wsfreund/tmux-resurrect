@@ -111,6 +111,21 @@ pane_creation_command() {
 	echo "cat '$(pane_contents_file "restore" "${1}:${2}.${3}")'; exec $(tmux_default_command)"
 }
 
+send_keys() {
+  local keys=$1
+  local target=$2
+  sleep 0.1 || sleep 1
+  tmux send-keys -t "$target" "$keys"
+  sleep 0.1 || sleep 1
+}
+
+run_cmd() {
+  local message="$1"
+  local pane=$2
+  send_keys "$message" "$pane"
+  send_keys "C-m" "$pane"
+}
+
 new_window() {
 	local session_name="$1"
 	local window_number="$2"
@@ -118,6 +133,11 @@ new_window() {
 	local dir="$4"
 	local pane_index="$5"
 	local pane_id="${session_name}:${window_number}.${pane_index}"
+  #echo "new_window: original command: $pane_id|$window_name|$dir|$pane_id"
+  if [[ $window_name == 'M:'* ]]; then
+    window_name="${window_name#M:}"
+    local change_window_name="export MANUAL_TITLE=\"${window_name#:}\""
+  fi
 	if is_restoring_pane_contents && pane_contents_file_exists "$pane_id"; then
 		local pane_creation_command="$(pane_creation_command "$session_name" "$window_number" "$pane_index")"
 		tmux new-window -d -t "${session_name}:${window_number}" -n "$window_name" -c "$dir" "$pane_creation_command"
@@ -167,7 +187,9 @@ restore_pane() {
 	local pane="$1"
 	while IFS=$d read line_type session_name window_number window_name window_active window_flags pane_index dir pane_active pane_command pane_full_command; do
 		dir="$(remove_first_char "$dir")"
-		window_name="$(remove_first_char "$window_name")"
+    if [[ $window_name != "M:"* ]]; then
+      window_name="$(remove_first_char "$window_name")"
+    fi
 		pane_full_command="$(remove_first_char "$pane_full_command")"
 		if pane_exists "$session_name" "$window_number" "$pane_index"; then
 			if is_restoring_from_scratch; then
@@ -297,6 +319,9 @@ restore_all_pane_processes() {
 				dir="$(remove_first_char "$dir")"
 				pane_full_command="$(remove_first_char "$pane_full_command")"
 				restore_pane_process "$pane_full_command" "$session_name" "$window_number" "$pane_index" "$dir"
+        if [[ $pane_full_command == "vim"* ]]; then
+          sleep 0.1 || sleep 1
+        fi
 			done
 	fi
 }
@@ -360,4 +385,4 @@ main() {
 		display_message "Tmux restore complete!"
 	fi
 }
-main
+main # > $logfile 
