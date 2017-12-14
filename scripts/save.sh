@@ -235,6 +235,8 @@ check_is_manual_title(){
 # translates pane pid to process command running inside a pane
 dump_panes() {
 	local full_command
+  local sname
+  local tfull_command
 	dump_panes_raw |
 		while IFS=$d read line_type session_name window_number window_name window_active window_flags pane_index dir pane_active pane_command pane_pid history_size; do
 			# not saving panes from grouped sessions
@@ -247,6 +249,18 @@ dump_panes() {
       fi
 			full_command="$(pane_full_command $pane_pid)"
       full_command=${full_command/#vim -X/vim}
+      if [ "${full_command#vim -X}" != "${full_command}" ]; then
+        full_command="vim${full_command#vim -X}"
+      fi
+      sname=${window_name#:}
+      if [ "${sname//\//}" = "$sname" -a "${sname#..}" = "${sname}" -a "${pane_active}" = "1" ]; then
+        if [ -z "${full_command}" -a  ]; then
+          full_command="export MANUAL_TITLE=\"${sname}\""
+        elif [ -n "${full_command}" -a "${full_command#$sname}" = "${full_command}" ]; then
+          tfull_command="export MANUAL_TITLE=\"${sname}\""
+          echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_name}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${tfull_command}"
+        fi
+      fi
 			echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_name}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${full_command}"
 		done
 }
