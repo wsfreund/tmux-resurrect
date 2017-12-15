@@ -207,6 +207,14 @@ restore_pane() {
 				# Pane existence is registered. Later, its process also won't be restored.
 				register_existing_pane "$session_name" "$window_number" "$pane_index"
 			fi
+			if [[ $window_name == 'M:'* ]]; then
+				window_name="${window_name#M:}"
+				local change_window_name="export MANUAL_TITLE=\"${window_name#:}\""
+			fi
+			if [[ -n "$change_window_name" ]]; then
+				sleep 0.1 || sleep 1;
+				run_cmd "$change_window_name" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+			fi
 		elif window_exists "$session_name" "$window_number"; then
 			new_pane "$session_name" "$window_number" "$window_name" "$dir" "$pane_index"
 		elif session_exists "$session_name"; then
