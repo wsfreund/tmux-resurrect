@@ -144,6 +144,18 @@ new_window() {
 	else
 		tmux new-window -d -t "${session_name}:${window_number}" -n "$window_name" -c "$dir"
 	fi
+  if [[ "$session_name" == "RingerProject" ]]; then
+     sleep 0.1 || sleep 1;
+     run_cmd "source ~/RingerProject_cessy/root" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+  fi
+  if [[ "$session_name" == "TPFrame" ]]; then
+     sleep 0.1 || sleep 1;
+     run_cmd "source ~/RingerTPFrame/setrootcore.sh" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+  fi
+  if [[ -n "$change_window_name" ]]; then
+    sleep 0.1 || sleep 1;
+    run_cmd "$change_window_name" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+  fi
 }
 
 new_session() {
@@ -164,6 +176,14 @@ new_session() {
 	if [ $created_window_num -ne $window_number ]; then
 		tmux move-window -s "${session_name}:${created_window_num}" -t "${session_name}:${window_number}"
 	fi
+  if [[ "$session_name" == "shared" ]]; then
+    sleep 0.1 || sleep 1 
+    run_cmd "keep_kinit_on.sh &" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+    sleep 0.1 || sleep 1 
+    run_cmd "RucioOn.sh" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+    sleep 0.1 || sleep 1 
+    run_cmd "keep_voms_on.sh &" "${session_name}:${window_number}"  && { sleep 0.1 || sleep 1; }
+  fi
 }
 
 new_pane() {
@@ -203,6 +223,22 @@ restore_pane() {
 				# Pane existence is registered. Later, its process also won't be restored.
 				register_existing_pane "$session_name" "$window_number" "$pane_index"
 			fi
+      if [[ "$session_name" == "RingerProject" ]]; then
+         sleep 0.1 || sleep 1;
+         run_cmd "source ~/RingerProject_cessy/root" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+      fi
+      if [[ "$session_name" == "TPFrame" ]]; then
+         sleep 0.1 || sleep 1;
+         run_cmd "source ~/RingerTPFrame/setrootcore.sh" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+      fi
+      if [[ $window_name == 'M:'* ]]; then
+        window_name="${window_name#M:}"
+        local change_window_name="export MANUAL_TITLE=\"${window_name#:}\""
+      fi
+      if [[ -n "$change_window_name" ]]; then
+        sleep 0.1 || sleep 1;
+        run_cmd "$change_window_name" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+      fi
 		elif window_exists "$session_name" "$window_number"; then
 			new_pane "$session_name" "$window_number" "$window_name" "$dir" "$pane_index"
 		elif session_exists "$session_name"; then
@@ -210,6 +246,10 @@ restore_pane() {
 		else
 			new_session "$session_name" "$window_number" "$window_name" "$dir" "$pane_index"
 		fi
+    if [[ "$session_name" == "data" ]]; then
+      sleep 0.1 || sleep 1;
+      run_cmd "RucioOn.sh" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+    fi
 	done < <(echo "$pane")
 }
 
