@@ -144,6 +144,10 @@ new_window() {
 	else
 		tmux new-window -d -t "${session_name}:${window_number}" -n "$window_name" -c "$dir"
 	fi
+  if [[ -n "$change_window_name" ]]; then
+    sleep 0.1 || sleep 1;
+    run_cmd "$change_window_name" "${session_name}:${window_number}" && { sleep 0.1 || sleep 1; }
+  fi
 }
 
 new_session() {
